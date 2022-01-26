@@ -1,0 +1,19 @@
+{
+    "name": "UI",
+    "rootNamespace": "GAME",
+    "references": [
+        "GUID:6055be8ebefd69e48b49212b09b47b2f",
+        "GUID:cb994a88e88a1de4e9e7a60bf59a5c78",
+        "GUID:bd742c256e552b843b9b725117af1de6",
+        "GUID:6a674587529a11f479a3b83ff89168f5"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,0 +1,17 @@
+{
+    "name": "CONTROLLERS",
+    "rootNamespace": "GAME",
+    "references": [
+        "GUID:75469ad4d38634e559750d17036d5f7c",
+        "GUID:cb994a88e88a1de4e9e7a60bf59a5c78"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
