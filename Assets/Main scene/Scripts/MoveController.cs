@@ -1,18 +1,19 @@
-using System.Collections;
-using System.Collections.Generic;
+using System;
 using UnityEngine;
 
 namespace GAME
 {
     public class MoveController : MonoBehaviour
     {
+
+        public event Action<ShipMoveInfo> OnShipMoveInfoChange; 
+
+        [SerializeField] private float _maxSpeed = 10.0f;
+        [SerializeField] private float _acceleration = 3f;
+        [SerializeField] private float _rotationSpeed = 100f;
+
         private PlayerInputControl _inputSystem;
-
-        private Vector2 velocity = Vector2.zero;
-        private float maxSpeed = 10.0f;
-        private float Acceleration = 3f;
-
-        private float rotationSpeed = 100f;
+        private Vector2 _velocity = Vector2.zero;
 
         private void Awake()
         {
@@ -26,6 +27,7 @@ namespace GAME
             Vector2 direction = _inputSystem.Player.Move.ReadValue<Vector2>();
             Move(direction);
             Rotate(direction);
+            RiseEvent();
         }
 
         private void Move(Vector2 direction)
@@ -35,16 +37,16 @@ namespace GAME
 
             if (dir.y > 0)
             {
-                velocity = Vector2.Lerp(velocity, transform.right * maxSpeed, Acceleration * Time.deltaTime);         
+                _velocity = Vector2.Lerp(_velocity, transform.right * _maxSpeed, _acceleration * Time.deltaTime);         
             }
             else
             {
                 // diminishing velocity (air, engine drag what not)
-                velocity = Vector2.Lerp(velocity, Vector2.zero, Time.deltaTime);
+                _velocity = Vector2.Lerp(_velocity, Vector2.zero, Time.deltaTime);
             }
 
             // move your transform velocity
-            transform.Translate(velocity* Time.deltaTime, Space.World);
+            transform.Translate(_velocity* Time.deltaTime, Space.World);
    
         }
 
@@ -54,7 +56,29 @@ namespace GAME
             if (direction.x == 0) return;
 
             Vector3 rotateTo = new Vector3(0, 0 , -direction.x);
-            transform.Rotate(rotateTo * rotationSpeed * Time.deltaTime);
+            transform.Rotate(rotateTo * _rotationSpeed * Time.deltaTime);
+        }
+    
+    
+        private void RiseEvent()
+        {
+            ShipMoveInfo shipMoveInfo = new ShipMoveInfo(transform.position, _velocity.y, transform.eulerAngles.z);
+
+            OnShipMoveInfoChange?.Invoke(shipMoveInfo);
+        }
+    }
+
+    public struct ShipMoveInfo
+    {
+        public float speed;
+        public float angle;
+        public Vector2 coords;
+
+        public ShipMoveInfo(Vector2 coords, float speed, float angle)
+        {
+            this.coords = coords;
+            this.speed = speed;
+            this.angle = angle;
         }
     }
 }

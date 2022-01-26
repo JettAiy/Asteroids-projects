@@ -16,17 +16,54 @@ namespace GAME
 
         [SerializeField] private GameObject _playerPrefab;
         [SerializeField] private GameObject _asteroidPrefab;
+        [SerializeField] private GameObject _debrisPrefab;
+        [SerializeField] private GameObject _enemyPrefab;
+
+        Vector3 screenBottomLeft;
+        Vector3 screenTopRight;
 
         public int Score { get; private set; }
 
-        private float _asteroidSpawnTime = 30f;
+        [Space]
+        [Header("SETTINGS")]
+        [SerializeField] private float _asteroidSpawnTime = 10f;
         private float _asteroidLastTimeSpawn;
+
+
+        [SerializeField] private float _enemySpawnTime = 20f;
+        private float _enemyLastTimeSpawn;
+
         private bool isRunning;
+        private bool isQuitting;
+
+        [Space]
+        [Header("DEBUG")]
+        [SerializeField] private int _asteroidSpawnMin = 3;
+        [SerializeField] private int _asteroidSpawnMax = 8;
+
+        [SerializeField] private int _enemySpawnMin = 1;
+        [SerializeField] private int _enemySpawnMax = 4;
+
+        private Coroutine _endGameCoroutine;
 
         #region INIT
         private void Start()
         {
             _uiManager.SwapUI(false);
+
+            Camera cam = Camera.main;
+
+            screenBottomLeft = cam.ViewportToWorldPoint(new Vector3(0, 0, 0));
+            screenTopRight = cam.ViewportToWorldPoint(new Vector3(1, 1, 0));
+
+            Application.quitting += ApplicationQuitting;
+        }
+
+        private void ApplicationQuitting()
+        {
+            if (_endGameCoroutine != null) StopCoroutine(_endGameCoroutine);
+
+            isQuitting = true;
         }
         #endregion
 
@@ -44,16 +81,26 @@ namespace GAME
         {
             ClearScene();
 
+            _asteroidLastTimeSpawn = 0;
+            _enemyLastTimeSpawn = 0;
             SetScore(0);
 
             SpawnPlayer();
-
-            SpawnAsteroids();
 
             _uiManager.SwapUI(true);
 
             isRunning = true;
 
+        }
+
+        IEnumerator EndGame()
+        {
+            isRunning = false;
+            ClearScene();
+            
+            yield return new WaitForSeconds(3f);
+
+            _uiManager.SwapUI(false);
         }
 
         private GameObject CreateObject(GameObject prefab)
@@ -70,7 +117,13 @@ namespace GAME
                 {
                     _asteroidLastTimeSpawn = Time.time;
                     SpawnAsteroids();
-                }     
+                }
+
+                if (Time.time - _enemyLastTimeSpawn >= _enemySpawnTime)
+                {
+                    _enemyLastTimeSpawn = Time.time;
+                    SpawnEnemy();
+                }
             }
         }
 
@@ -83,14 +136,7 @@ namespace GAME
         private void SpawnAsteroids()
         {
             
-
-            Camera cam = Camera.main;
-
-            Vector3 screenBottomLeft = cam.ViewportToWorldPoint(new Vector3(0, 0, transform.position.z));
-            Vector3 screenTopRight = cam.ViewportToWorldPoint(new Vector3(1, 1, transform.position.z));
-
-
-            int asteroidCount = UnityEngine.Random.Range(3, 9);
+            int asteroidCount = UnityEngine.Random.Range(_asteroidSpawnMin, _asteroidSpawnMax);
 
             for (int i = 0; i < asteroidCount; i++)
             {
@@ -101,28 +147,62 @@ namespace GAME
                 Vector3 position = GetRandomPointFromVectors(screenBottomLeft, screenTopRight);
                 position.z = 0;
                 asteroid.transform.position = position;
-            }
-            
+            }          
         }
+
+        private void SpawnDebris(GameObject asteroid)
+        {
+            int debrisCount = UnityEngine.Random.Range(1, 4);
+
+            Vector3 scale = asteroid.transform.localScale / 2;
+
+            for (int i = 0; i < debrisCount; i++)
+            {
+                GameObject debris = Instantiate(_debrisPrefab, asteroid.transform.parent);
+                debris.transform.position = asteroid.transform.position;
+                debris.transform.localScale = scale;
+
+                debris.GetComponent<DeadEvent>().OnDeadEvent += GameManagerOnDeadEvent;
+            }
+        }
+        
+        private void SpawnEnemy()
+        {
+            int enemyCount = UnityEngine.Random.Range(_enemySpawnMin, _enemySpawnMax);
+
+            for (int i = 0; i < enemyCount; i++)
+            {
+                GameObject enemy = CreateObject(_enemyPrefab);
+
+                enemy.GetComponent<DeadEvent>().OnDeadEvent += GameManagerOnDeadEvent;
+
+                Vector3 position = GetRandomPointFromVectors(screenBottomLeft, screenTopRight);
+                position.z = 0;
+                enemy.transform.position = position;
+            }
+        }
+
         #endregion
 
         #region EVENTS
-        private void GameManagerOnDeadEvent(GameObject go, int points)
+        private void GameManagerOnDeadEvent(DeadEvent deadEvent)
         {
-            go.GetComponent<DeadEvent>().OnDeadEvent -= GameManagerOnDeadEvent;
+            if (isQuitting) return;
 
-            if (points == -1)
-            {
-                isRunning = false;
-                ClearScene();
-                //player dead
-                _uiManager.SwapUI(false);
+            deadEvent.OnDeadEvent -= GameManagerOnDeadEvent;
 
-            }
-            else
+            if (!isRunning) return;
+
+            if (deadEvent.ObjectType == DeadObjectType.PLAYER)
             {
-                SetScore(Score +points);       
+                _endGameCoroutine = StartCoroutine(EndGame());
             }
+            else if (deadEvent.ObjectType == DeadObjectType.ASTEROID)
+            {
+                SpawnDebris(deadEvent.gameObject);
+            }
+
+            SetScore(Score + deadEvent.Point);
             
         }
         #endregion

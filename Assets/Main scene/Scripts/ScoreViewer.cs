@@ -9,6 +9,7 @@ namespace GAME
     {
         [SerializeField] private GameManager _gameManager;
 
+        [SerializeField] private string _prefixText;
         [SerializeField] private TextMeshProUGUI _text;
         
         private void Awake()
@@ -23,7 +24,7 @@ namespace GAME
 
         private void GameManagerOnScoreChange(int score)
         {
-            _text.text = $"Score: {score}";
+            _text.text = $"{_prefixText} {score}";
         }
     }
 }

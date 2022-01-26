@@ -5,13 +5,13 @@ namespace GAME
     public class UIManager : MonoBehaviour
     {
 
-        [SerializeField] private GameObject _startNewGameButton;
-        [SerializeField] private GameObject _scoreText;
+        [SerializeField] private GameObject _gameUI;
+        [SerializeField] private GameObject _initUI;
 
         public void SwapUI(bool value)
         {
-            ShowHideObject(_startNewGameButton, !value);
-            ShowHideObject(_scoreText, value);
+            ShowHideObject(_gameUI, value);
+            ShowHideObject(_initUI, !value);
         }
 
 
